@@ -18,6 +18,9 @@ import { AuthService } from '../../core/auth/auth.service';
             formControlName="email"
             class="w-full border border-slate-300 rounded px-3 py-2"
           />
+          @if (form.controls.email.touched && form.controls.email.invalid) {
+            <p class="text-xs text-red-600 mt-1">Enter a valid email.</p>
+          }
         </div>
         <div>
           <label class="block text-sm text-slate-700 mb-1">Password</label>
@@ -26,6 +29,9 @@ import { AuthService } from '../../core/auth/auth.service';
             formControlName="password"
             class="w-full border border-slate-300 rounded px-3 py-2"
           />
+          @if (form.controls.password.touched && form.controls.password.invalid) {
+            <p class="text-xs text-red-600 mt-1">Password is required.</p>
+          }
         </div>
         @if (error()) {
           <p class="text-sm text-red-600">{{ error() }}</p>
@@ -54,7 +60,9 @@ export class LoginComponent {
 
   readonly form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(8)]],
+    // Login should accept any non-empty password and let the server decide.
+    // Length rules belong only on the registration form.
+    password: ['', [Validators.required]],
   });
 
   submit(): void {

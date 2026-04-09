@@ -1,8 +1,20 @@
 import { Component, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../core/auth/auth.service';
+
+const passwordsMatch = (group: AbstractControl): ValidationErrors | null => {
+  const a = group.get('password')?.value;
+  const b = group.get('password_confirmation')?.value;
+  return a && b && a !== b ? { passwordsMismatch: true } : null;
+};
 
 @Component({
   selector: 'app-register',
@@ -17,6 +29,9 @@ import { AuthService } from '../../core/auth/auth.service';
             formControlName="name"
             class="w-full border border-slate-300 rounded px-3 py-2"
           />
+          @if (form.controls.name.touched && form.controls.name.invalid) {
+            <p class="text-xs text-red-600 mt-1">Name is required.</p>
+          }
         </div>
         <div>
           <label class="block text-sm text-slate-700 mb-1">Email</label>
@@ -25,6 +40,9 @@ import { AuthService } from '../../core/auth/auth.service';
             formControlName="email"
             class="w-full border border-slate-300 rounded px-3 py-2"
           />
+          @if (form.controls.email.touched && form.controls.email.invalid) {
+            <p class="text-xs text-red-600 mt-1">Enter a valid email.</p>
+          }
         </div>
         <div>
           <label class="block text-sm text-slate-700 mb-1">Password</label>
@@ -33,6 +51,9 @@ import { AuthService } from '../../core/auth/auth.service';
             formControlName="password"
             class="w-full border border-slate-300 rounded px-3 py-2"
           />
+          @if (form.controls.password.touched && form.controls.password.invalid) {
+            <p class="text-xs text-red-600 mt-1">Password must be at least 8 characters.</p>
+          }
         </div>
         <div>
           <label class="block text-sm text-slate-700 mb-1">Confirm password</label>
@@ -41,6 +62,12 @@ import { AuthService } from '../../core/auth/auth.service';
             formControlName="password_confirmation"
             class="w-full border border-slate-300 rounded px-3 py-2"
           />
+          @if (
+            form.controls.password_confirmation.touched &&
+            form.errors?.['passwordsMismatch']
+          ) {
+            <p class="text-xs text-red-600 mt-1">Passwords do not match.</p>
+          }
         </div>
         @if (error()) {
           <p class="text-sm text-red-600">{{ error() }}</p>
@@ -68,12 +95,15 @@ export class RegisterComponent {
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
 
-  readonly form = this.fb.nonNullable.group({
-    name: ['', [Validators.required]],
-    email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(8)]],
-    password_confirmation: ['', [Validators.required]],
-  });
+  readonly form = this.fb.nonNullable.group(
+    {
+      name: ['', [Validators.required]],
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(8)]],
+      password_confirmation: ['', [Validators.required]],
+    },
+    { validators: [passwordsMatch] },
+  );
 
   submit(): void {
     if (this.form.invalid) return;
